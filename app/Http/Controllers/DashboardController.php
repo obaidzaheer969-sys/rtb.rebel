@@ -88,6 +88,9 @@ class DashboardController extends Controller
                 'customer' => $submission->customer_name,
                 'phone' => $submission->phone,
                 'zip_code' => $submission->zip_code,
+                'endpoint' => $result['endpoint'] ?? null,
+                'request_payload' => $result['request_payload'] ?? null,
+                'api_response' => $result['raw'] ?? null,
             ],
             'history' => $history,
         ]);

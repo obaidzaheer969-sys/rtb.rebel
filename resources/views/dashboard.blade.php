@@ -247,10 +247,16 @@
             const renderResult = (result) => {
                 const status = result.status || 'error';
                 const reason = result.reject_reason
-                    ? `<p class="muted">${escapeHtml(result.reject_reason)}</p>`
+                    ? `<p class="muted"><strong>Ringba:</strong> ${escapeHtml(result.reject_reason)}</p>`
                     : '';
                 const expire = result.expire_in_seconds
                     ? `<div class="metric"><span>Expires In</span><strong>${escapeHtml(result.expire_in_seconds)}s</strong></div>`
+                    : '';
+                const requestJson = result.request_payload
+                    ? escapeHtml(JSON.stringify(result.request_payload, null, 2))
+                    : '';
+                const responseJson = result.api_response
+                    ? escapeHtml(JSON.stringify(result.api_response, null, 2))
                     : '';
 
                 resultPanel.innerHTML = `
@@ -259,6 +265,7 @@
                             <span>${escapeHtml(status)}</span>
                             <span>${escapeHtml(result.bid_id || 'No bid id')}</span>
                         </div>
+                        <p class="muted">API request sent successfully to Ringba RTB.</p>
                         <div class="metrics">
                             <div class="metric"><span>Bid Amount</span><strong>${money(result.bid_amount)}</strong></div>
                             <div class="metric"><span>Transfer Number</span><strong>${escapeHtml(result.transfer_number || '—')}</strong></div>
@@ -267,6 +274,10 @@
                             ${expire}
                         </div>
                         ${reason}
+                        <details class="api-details">
+                            <summary>API request / response</summary>
+                            <pre><strong>Sent</strong>\n${requestJson}\n\n<strong>Ringba response</strong>\n${responseJson}</pre>
+                        </details>
                     </div>
                 `;
             };
