@@ -14,7 +14,13 @@
     <div class="shell">
         <header class="topbar">
             <div class="brand">
-                <div class="brand-mark" aria-hidden="true">RC</div>
+                <div class="logo-3d" id="logo-3d" aria-label="Rebel Communication logo">
+                    <div class="logo-3d__stage">
+                        <div class="logo-3d__mesh" id="logo-cube">
+                            <img class="logo-3d__img" src="{{ asset('images/rebel-crest.png') }}?v=3" alt="Rebel Communication">
+                        </div>
+                    </div>
+                </div>
                 <div>
                     <h1>Rebel Communication</h1>
                     <p>Agent Dashboard</p>
@@ -169,6 +175,56 @@
 
     <script>
         (() => {
+            const logo = document.getElementById('logo-3d');
+            const mesh = document.getElementById('logo-cube');
+            if (logo && mesh) {
+                let dragging = false;
+                let startX = 0;
+                let startY = 0;
+                let rotX = -16;
+                let rotY = -26;
+
+                const apply = () => {
+                    mesh.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+                };
+
+                logo.addEventListener('pointerdown', (event) => {
+                    dragging = true;
+                    logo.classList.add('is-dragging');
+                    startX = event.clientX;
+                    startY = event.clientY;
+                    logo.setPointerCapture?.(event.pointerId);
+                });
+
+                logo.addEventListener('pointermove', (event) => {
+                    if (!dragging) {
+                        const rect = logo.getBoundingClientRect();
+                        const x = (event.clientX - rect.left) / rect.width - 0.5;
+                        const y = (event.clientY - rect.top) / rect.height - 0.5;
+                        mesh.style.transform = `rotateX(${-16 - y * 30}deg) rotateY(${-26 + x * 48}deg)`;
+                        return;
+                    }
+                    rotY += (event.clientX - startX) * 0.55;
+                    rotX = Math.max(-55, Math.min(35, rotX - (event.clientY - startY) * 0.45));
+                    startX = event.clientX;
+                    startY = event.clientY;
+                    apply();
+                });
+
+                const endDrag = () => {
+                    if (!dragging) return;
+                    dragging = false;
+                    logo.classList.remove('is-dragging');
+                    mesh.style.transform = '';
+                };
+
+                logo.addEventListener('pointerup', endDrag);
+                logo.addEventListener('pointercancel', endDrag);
+                logo.addEventListener('pointerleave', () => {
+                    if (!dragging) mesh.style.transform = '';
+                });
+            }
+
             const form = document.getElementById('submission-form');
             const submitBtn = document.getElementById('submit-btn');
             const formError = document.getElementById('form-error');
