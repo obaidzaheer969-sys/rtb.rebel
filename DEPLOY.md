@@ -1,63 +1,113 @@
 # Live deploy — rtb.rebelcommunicationchat.com
 
-## 403 Forbidden fix
+## Current hosting path
 
-Apache returns **403 Forbidden** when the domain root is not pointing at Laravel's `public` folder, or when app files are missing.
+Document root should be:
 
-### Option A (best): point document root to `public`
-
-In cPanel / hosting:
-
-1. Domain: `rtb.rebelcommunicationchat.com`
-2. Document Root → `.../rtb.rebel/public` (must end with `/public`)
-3. Save and wait a minute
-
-### Option B: keep root as project folder
-
-This repo includes root `.htaccess` + `index.php` that forward into `public/`.
-
-Requirements:
-
-- Apache `mod_rewrite` enabled
-- `AllowOverride All` for the site
-
-## Server setup
-
-```bash
-composer install --no-dev --optimize-autoloader
-cp .env.example .env
-php artisan key:generate
+```text
+/home/sites/26b/5/5cbaefac17/public_html/rtb/public
 ```
 
-Edit `.env`:
+So project files must exist like this:
+
+```text
+/home/sites/.../public_html/rtb/
+  app/
+  bootstrap/
+  config/
+  database/
+  public/          <--- domain points HERE
+    index.php
+    .htaccess
+    css/
+    images/
+  routes/
+  storage/
+  vendor/
+  .env
+  artisan
+  composer.json
+```
+
+If `public/index.php` is missing at that exact path, Apache shows **403/404**.
+
+## Fix checklist (do in order)
+
+1. Upload / clone full repo into:
+   `/home/sites/26b/5/5cbaefac17/public_html/rtb`
+2. Confirm these exist on server:
+   - `.../rtb/public/index.php`
+   - `.../rtb/public/.htaccess`
+   - `.../rtb/vendor/autoload.php`
+   - `.../rtb/.env`
+3. Domain document root must be exactly:
+   `/home/sites/26b/5/5cbaefac17/public_html/rtb/public`
+4. Permissions:
+   ```bash
+   chmod -R 755 /home/sites/26b/5/5cbaefac17/public_html/rtb
+   chmod -R 775 /home/sites/26b/5/5cbaefac17/public_html/rtb/storage
+   chmod -R 775 /home/sites/26b/5/5cbaefac17/public_html/rtb/bootstrap/cache
+   ```
+5. Install PHP deps (on server SSH, or upload `vendor` from local):
+   ```bash
+   cd /home/sites/26b/5/5cbaefac17/public_html/rtb
+   composer install --no-dev --optimize-autoloader
+   ```
+6. Create DB + migrate:
+   ```bash
+   touch database/database.sqlite
+   php artisan key:generate --force
+   php artisan migrate --force
+   php artisan config:clear
+   php artisan cache:clear
+   ```
+
+## Recommended `.env` for this host
 
 ```env
 APP_NAME="Rebel Communication"
 APP_ENV=production
+APP_KEY=base64:PUT_YOUR_KEY_HERE
 APP_DEBUG=false
 APP_URL=https://rtb.rebelcommunicationchat.com
 
 DB_CONNECTION=sqlite
+DB_DATABASE=/home/sites/26b/5/5cbaefac17/public_html/rtb/database/database.sqlite
+
+SESSION_DRIVER=file
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
 
 RINGBA_RTB_ENDPOINT=https://rtb.ringba.com/v1/production/ec23a7fce72944aba7f568c96aa931b2.json
+RINGBA_RTB_TIMEOUT=15
 RINGBA_TRAFFIC_SOURCE=rebelcommunication
 ```
 
-Then:
+Important:
 
-```bash
-touch database/database.sqlite
-php artisan migrate --force
-chmod -R 775 storage bootstrap/cache
+- Use absolute `DB_DATABASE` path on Linux hosting
+- Prefer `SESSION_DRIVER=file` and `CACHE_STORE=file` on shared hosting
+- Do **not** point domain to `/rtb` — point to `/rtb/public`
+
+## Ringba `No capacity (Code: 1003)`
+
+App is sending correctly. Example successful ping:
+
+```json
+{
+  "bidId": "RTB...",
+  "bidAmount": 0,
+  "rejectReason": "No capacity (Code: 1003)"
+}
 ```
 
-## Upload checklist
+This means Ringba received the lead, but no buyer/target is available (capacity, hours, filters, or disabled target). Fix that in Ringba campaign settings.
 
-- Upload full project (including `vendor` if server has no Composer)
-- Ensure `public/images/rebel-crest.png` exists
-- Ensure `.env` exists on server (never commit secrets carelessly)
-- Clear cache: `php artisan config:clear && php artisan cache:clear`
+## Quick test after deploy
 
-## Test
+Open:
 
-Open: https://rtb.rebelcommunicationchat.com
+- https://rtb.rebelcommunicationchat.com/
+- https://rtb.rebelcommunicationchat.com/css/dashboard.css
+
+If CSS opens, document root is correct.
