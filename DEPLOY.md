@@ -101,7 +101,14 @@ App is sending correctly. Example successful ping:
 }
 ```
 
-This means Ringba received the lead, but no buyer/target is available (capacity, hours, filters, or disabled target). Fix that in Ringba campaign settings.
+This means Ringba received the lead, but no buyer/target is available. Per [Ringba RTB Error Codes](https://support.ringba.com/hc/en-us/articles/17992477665943-RTB-Error-Codes), check target settings for:
+
+- Target is disabled
+- Capacity has been reached
+- Tag routing filters didn't match
+- Hours of operation (target is closed)
+
+This is a Ringba campaign/buyer setting — not an application bug. The app request/response path is working when you see a `bidId` with this reject reason.
 
 ## Quick test after deploy
 

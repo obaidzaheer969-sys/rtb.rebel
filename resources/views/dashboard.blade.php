@@ -244,6 +244,26 @@
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#39;');
 
+            const statusMessage = (result) => {
+                const status = result.status || 'error';
+                const reason = String(result.reject_reason || '');
+                const isCapacity = /no capacity|code:\s*1003/i.test(reason);
+
+                if (status === 'accepted') {
+                    return 'Bid accepted. Transfer the customer using the number below.';
+                }
+
+                if (status === 'rejected' && isCapacity) {
+                    return 'Ringba received this lead, but no buyer/target has capacity right now. Check Ringba target capacity, hours, tag filters, or whether the target is disabled — this is not an app error.';
+                }
+
+                if (status === 'rejected') {
+                    return 'Ringba rejected this bid. See the reason below.';
+                }
+
+                return 'Unable to complete the bid request.';
+            };
+
             const renderResult = (result) => {
                 const status = result.status || 'error';
                 const reason = result.reject_reason
@@ -265,7 +285,7 @@
                             <span>${escapeHtml(status)}</span>
                             <span>${escapeHtml(result.bid_id || 'No bid id')}</span>
                         </div>
-                        <p class="muted">API request sent successfully to Ringba RTB.</p>
+                        <p class="muted">${escapeHtml(statusMessage(result))}</p>
                         <div class="metrics">
                             <div class="metric"><span>Bid Amount</span><strong>${money(result.bid_amount)}</strong></div>
                             <div class="metric"><span>Transfer Number</span><strong>${escapeHtml(result.transfer_number || '—')}</strong></div>
